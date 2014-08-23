@@ -1,4 +1,5 @@
-{
+YUI.add('fhir-conformance',function(Y) {
+  Y.namespace('FHIR').Conformance = {
   "resourceType": "Conformance",
   "text": {
     "status": "generated",
@@ -5069,4 +5070,5 @@
       ]
     }
   ]
-}
+};
+});

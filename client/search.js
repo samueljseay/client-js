@@ -1,88 +1,101 @@
-module.exports = Search;
-var $ = jQuery = require('./jquery');
+YUI.add('fhir-search', function(Y) {
+	var Q = Y.Q;
 
-function Search(p) {
+	function Search(p) {
 
-  var search = {};
+		var search = {};
 
-  search.client = p.client;
-  search.spec = p.spec;
-  search.count = p.count || 50;
+		search.client = p.client;
+		search.spec = p.spec;
+		search.count = p.count || 50;
 
-  var nextPageUrl = null;
+		var nextPageUrl = null;
 
-  function gotFeed(d){
-    return function(data, status) {
+		function gotFeed(d){
+			return function(tx, response) {
+				nextPageUrl = null;
+				var feed = Y.JSON.parse(response.responseText);
 
-      nextPageUrl = null; 
-      var feed = data.feed || data;
+				if(feed.link) {
+					var next = feed.link.filter(function(l){
+						return l.rel === "next";
+					});
 
-      if(feed.link) {
-        var next = feed.link.filter(function(l){
-          return l.rel === "next";
-        });
-        if (next.length === 1) {
-          nextPageUrl = next[0].href 
-        }
-      }
+					if (next.length === 1) {
+						nextPageUrl = next[0].href
+					}
+				}
 
-      var results = search.client.indexFeed(data); 
-      d.resolve(results, search);
-    }
-  };
+				var results = search.client.indexFeed(feed);
+				d.resolve(results, search);
+			};
+		};
 
-  function failedFeed(d){
-    return function(failure){
-      d.reject("Search failed.", arguments);
-    }
-  };
+		function failedFeed(d){
+			return function(failure){
+				d.reject("Search failed.", arguments);
+			}
+		};
 
-  search.hasNext = function(){
-    return nextPageUrl !== null;
-  };
+		search.hasNext = function(){
+			return nextPageUrl !== null;
+		};
 
-  search.next = function() {
+		search.next = function() {
+			var ret = Q.defer();
 
-    if (nextPageUrl === null) {
-      throw "Next page of search not available!";
-    }
+			if (nextPageUrl === null) {
+				throw "Next page of search not available!";
+			}
 
-    var searchParams = {
-      type: 'GET',
-      url: nextPageUrl,
-      dataType: 'json',
-      traditional: true
-    };
+			var searchParams = {
+				method: 'GET',
+				url: nextPageUrl,
+				traditional: true,
+				headers: {
+					'Accept': 'application/json'
+				},
+				on: {
+					success: gotFeed(ret),
+					failure: failedFeed(ret)
+				}
+			};
 
-    var ret = new $.Deferred();
-    console.log("Nexting", searchParams);
-    $.ajax(search.client.authenticated(searchParams))
-    .done(gotFeed(ret))
-    .fail(failedFeed(ret));
+			console.log("Nexting", searchParams);
 
-    return ret;
-  };
+			Y.io(searchParams.url, search.client.authenticated(searchParams));
 
-  search.execute = function() {
+			return ret;
+		};
 
+		search.execute = function() {
+			var ret = Q.defer();
 
-    var searchParams = {
-      type: 'GET',
-      url: search.client.urlFor(search.spec),
-      data: search.spec.queryParams(),
-      dataType: "json",
-      traditional: true
-    };
+			var searchParams = {
+				method: 'GET',
+				url: search.client.urlFor(search.spec),
+				data: search.spec.queryParams(),
+				traditional: true,
+				headers: {
+					'Accept': 'application/json'
+				},
+				on: {
+					success: gotFeed(ret),
+					failure: failedFeed(ret)
+				}
+			};
 
-    var ret = new $.Deferred();
+			Y.io(searchParams.url,
+				search.client.authenticated(searchParams)
+			);
 
-    $.ajax(search.client.authenticated(searchParams))
-    .done(gotFeed(ret))
-    .fail(failedFeed(ret));
+			return ret.promise;
+		};
 
-    return ret;
-  };
+		return search;
+	}
 
-  return search;
-}
-
+	Y.namespace('FHIR').Search = Search;
+}, '0.0.1', {
+    requires: ['io-base', 'yui-q','json-parse']
+});

@@ -1,5 +1,3 @@
-// module.exports = Search;
-// var $ = jQuery = require('./jquery');
 YUI.add('fhir-search', function(Y) {
 	function Search(p) {
 
@@ -42,41 +40,56 @@ YUI.add('fhir-search', function(Y) {
 		};
 
 		search.next = function() {
+			var ret = Q.defer();
+
 			if (nextPageUrl === null) {
 				throw "Next page of search not available!";
 			}
 
 			var searchParams = {
-				type: 'GET',
+				method: 'GET',
 				url: nextPageUrl,
 				dataType: 'json',
-				traditional: true
+				traditional: true,
+				on: {
+					success: function() {
+						gotFeed(ret);
+					},
+					failure: function() {
+						failedFeed(ret);
+					}
+				}
 			};
 
-			var ret = new $.Deferred();
 			console.log("Nexting", searchParams);
 
-			$.ajax(search.client.authenticated(searchParams))
-			.done(gotFeed(ret))
-			.fail(failedFeed(ret));
+			Y.io(searchParams.url, search.client.authenticated(searchParams));
 
 			return ret;
 		};
 
 		search.execute = function() {
+			var ret = Q.defer();
+
 			var searchParams = {
-				type: 'GET',
+				method: 'GET',
 				url: search.client.urlFor(search.spec),
 				data: search.spec.queryParams(),
 				dataType: "json",
-				traditional: true
+				traditional: true,
+				on: {
+					success: function() {
+						gotFeed(ret);
+					},
+					failure: function() {
+						failedFeed(ret);
+					}
+				}
 			};
 
-			var ret = new $.Deferred();
-
-			$.ajax(search.client.authenticated(searchParams))
-			.done(gotFeed(ret))
-			.fail(failedFeed(ret));
+			Y.io(searchParams.url,
+				search.client.authenticated(searchParams)
+			);
 
 			return ret;
 		};
@@ -85,4 +98,6 @@ YUI.add('fhir-search', function(Y) {
 	}
 
 	Y.namespace('FHIR').Search = Search;
+}, '0.0.1', {
+    requires: ['io-base', 'yui-q']
 });

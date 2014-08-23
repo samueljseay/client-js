@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 
   <head>
@@ -14,7 +14,7 @@
 
       /* Create a patient welcome banner */
       var pq = smart.Patient.where._id(demo.patientId)
-      
+
       pq.search().then(function(p) {
         var name = p[0].name[0];
         var formatted = name.given.join(" ") + " " + name.family;
@@ -46,4 +46,34 @@
   </body>
 
 
+</html> -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="http://yui.yahooapis.com/3.17.2/build/yui/yui-min.js"></script>
+    <script src="../client/bb-client.js"></script>
+    <script src="../client/build-definitions.js"></script>
+    <script src="../client/client.js"></script>
+    <script src="../client/guid.js"></script>
+    <script src="../client/namespace.js"></script>
+    <script src="../client/search-specification.js"></script>
+    <script src="../client/search.js"></script>
+    <script src="../client/utils.js"></script>
+    <script src="../vendor/yui-q.js"></script>
+    <script src="../vendor/conformance.js"></script>
+    <script src="../vendor/base64.js"></script>
+    <script src="../client/fhir.js"></script>
+  </head>
+  <body>
+    <h1>It Begins...</h1>
+    <script>
+        YUI().use('fhir',function(Y) {
+          var demo = {
+            serviceUrl: "https://open-api.fhir.me",
+            patientId: "1137192"
+          },
+          client = Y.FHIR.client(demo);
+        });
+    </script>
+  </body>
 </html>

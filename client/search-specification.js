@@ -3,9 +3,8 @@ YUI.add('fhir-search-spec', function(Y) {
 		mixins = mixins || {};
 
 		var specs = {};
-		var util = require('util');
-		var namespace = require('./namespace');
-		var definitions = require('./build-definitions');
+		var namespace = Y.FHIR.Namespace;
+		var definitions = Y.FHIR.Definitions;
 
 		function defineSearchParam(resourceSpec, searchParam) {
 			Object.keys(searchParam.handlers).forEach(function(handlerName){
@@ -25,7 +24,7 @@ YUI.add('fhir-search-spec', function(Y) {
 
 			this.__addClause = function(c){
 				var newClauses = JSON.parse(JSON.stringify(clauses));
-				if (!util.isArray(c)){
+				if (!Y.Lang.isArray(c)){
 					c = [c];
 				}
 
@@ -75,7 +74,7 @@ YUI.add('fhir-search-spec', function(Y) {
 			var that = this;
 
 			this.handlers[name] = function(value){
-				if (util.isArray(value) || arguments.length > 1){
+				if (Y.Lang.isArray(value) || arguments.length > 1){
 					throw "only expected one argument to " + name;
 				}
 
@@ -119,7 +118,7 @@ YUI.add('fhir-search-spec', function(Y) {
 			function flatten(args){
 				var values = [];
 				Array.prototype.slice.call(args, 0).forEach(function(arg){
-					if (!util.isArray(arg)){
+					if (!Y.Lang.isArray(arg)){
 						arg = [arg];
 					}
 					arg.forEach(function(arg){
@@ -291,4 +290,6 @@ YUI.add('fhir-search-spec', function(Y) {
 	};
 
 	Y.namespace('FHIR.Search').Specification = searchSpec;
+}, '0.0.1', {
+    requires: ['io-base', 'yui-q', 'fhir-namespace','fhir-build-definitions']
 });

@@ -1,5 +1,6 @@
 //var c = require('../vendor/conformance.json');
 YUI.add('fhir-build-definitions', function(Y) {
+	var c = Y.FHIR.Conformance;
 	var definitions = {};
 
 	var camelCased = function(s){
@@ -20,6 +21,10 @@ YUI.add('fhir-build-definitions', function(Y) {
 			});
 		});
 	});
+
+	Y.namespace('FHIR').Definitions = definitions;
+}, '0.0.1', {
+    requires: ['fhir-conformance']
 });
 
 

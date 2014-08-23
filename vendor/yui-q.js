@@ -1,4 +1,4 @@
-YUI.add('yui-q', function(){
+YUI.add('yui-q', function(Y){
     // vim:ts=4:sts=4:sw=4:
     /*!
      *

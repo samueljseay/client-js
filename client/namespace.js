@@ -1,5 +1,5 @@
 YUI.add('fhir-namespace', function(Y) {
-	Y.namespace('FHIR').namespace = {
+	Y.namespace('FHIR').Namespace = {
 		any: 'special::any_namespace',
 		none: 'special::no_namespace',
 		loinc: 'http://loinc.org',

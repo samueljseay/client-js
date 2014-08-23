@@ -1,10 +1,6 @@
-// var btoa = require('btoa');
-// var Search = require('./search');
-// var $ = jQuery = require('./jquery');
-//var clientUtils = require('./utils');
-
-// module.exports = FhirClient;
 YUI.add('fhir-client', function(Y) {
+	var Search = Y.FHIR.Search,
+		clientUtils = Y.FHIR.Utils;
 
 	var regexpSpecialChars = /([\[\]\^\$\|\(\)\\\+\*\?\{\}\=\!])/gi;
 
@@ -172,7 +168,7 @@ YUI.add('fhir-client', function(Y) {
 		}
 
 		function followContained(from, id) {
-			var ret = new $.Deferred();
+			var ret = Q.defer();
 			var val = getContained(from, id);
 			setTimeout(function(){
 				if (val === null) {
@@ -184,7 +180,7 @@ YUI.add('fhir-client', function(Y) {
 		};
 
 		function followLocal(url) {
-			var ret = new $.Deferred();
+			var ret = Q.defer();
 			var val = getLocal(url);
 			setTimeout(function(){
 				if (val === null) {
@@ -202,24 +198,27 @@ YUI.add('fhir-client', function(Y) {
 
 		client.get = function(p) {
 			// p.resource, p.id, ?p.version, p.include
-			var ret = new $.Deferred();
+			var ret = Q.defer();
 			var url = server.serviceUrl + '/' + p.resource + '/' + p.id;
 
-			$.ajax(client.authenticated({
-				type: 'GET',
-				url: url,
-				dataType: 'json'
-			}))
-			.done(function(data, status){
-				var ids = client.indexResource(url, data);
-				if (ids.length !== 1) {
-				  ret.reject("Didn't get exactly one result for " + url);
-				}
-				ret.resolve(ids[0]);
-		  	})
-			.fail(function(){
-				ret.reject("Could not fetch " + url, arguments);
-		  	});
+			Y.io(url,
+				client.authenticated({
+					method: 'GET',
+					on: {
+						success: function(data, status) {
+							var ids = client.indexResource(url, data);
+							if (ids.length !== 1) {
+							  ret.reject("Didn't get exactly one result for " + url);
+							}
+							ret.resolve(ids[0]);
+						},
+						failure: function() {
+							ret.reject("Could not fetch " + url, arguments);
+						}
+					}
+				})
+			);
+
 			return ret;
 		};
 
@@ -238,7 +237,7 @@ YUI.add('fhir-client', function(Y) {
 		}
 
 		client.drain =  function(searchSpec, batch){
-			var d = $.Deferred();
+			var d = Q.defer();
 
 			if (batch === undefined){
 				var db = [];
@@ -251,18 +250,19 @@ YUI.add('fhir-client', function(Y) {
 
 			db = db || {};
 			client.search(searchSpec)
-		  	.done(function drain(vs, cursor){
+		  	.then(function drain(vs, cursor){
 				batch(vs);
 				if (cursor.hasNext()){
-					cursor.next().done(drain);
+					cursor.next().then(drain);
 				} else {
 					d.resolve();
 				}
 		  	});
-			return d.promise();
+
+			return d.promise;
 		};
 
-		var specs = require('./search-specification')({
+		var specs = Y.FHIR.Search.Specification({
 			"search": client,
 			"drain": client
 		});
@@ -369,6 +369,6 @@ YUI.add('fhir-client', function(Y) {
 
 	Y.namespace('FHIR').client = FhirClient;
 }, '0.0.1', {
-    requires: ['io-base', 'yui-q']
+    requires: ['io-base', 'yui-q', 'btoa', 'fhir-search-spec', 'fhir-utils']
 });
 

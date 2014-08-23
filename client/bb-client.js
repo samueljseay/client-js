@@ -1,4 +1,7 @@
 YUI.add('fhir-bb-client', function(Y) {
+	var Q = Y.Q,
+		BBClient = { debug: true };
+
 	function urlParam(p, forceArray) {
 		if (forceArray === undefined) {
 			forceArray = false;
@@ -36,7 +39,7 @@ YUI.add('fhir-bb-client', function(Y) {
 			hash = window.location.hash;
 		}
 
-		var ret = $.Deferred();
+		var ret = Q.defer();
 
 		process.nextTick(function(){
 			var oauthResult = hash.match(/#(.*)/);
@@ -52,7 +55,7 @@ YUI.add('fhir-bb-client', function(Y) {
 			ret.resolve(authorization);
 		});
 
-		return ret.promise();
+		return ret.promise;
 	}
 
 	function completeCodeFlow(params) {
@@ -63,37 +66,40 @@ YUI.add('fhir-bb-client', function(Y) {
 			};
 		}
 
-		var ret =  $.Deferred();
+		var ret =  Q.defer();
 		var state = JSON.parse(sessionStorage[params.state]);
 
 		if (window.history.replaceState){
 			window.history.replaceState({}, "", window.location.toString().replace(window.location.search, ""));
 		}
 
-		$.ajax({
-			url: state.provider.oauth2.token_uri,
-			type: 'POST',
+		Y.io(state.provider.oauth2.token_uri,{
+			method: 'POST',
 			data: {
 			  code: params.code,
 			  grant_type: 'authorization_code',
 			  redirect_uri: state.client.redirect_uri,
 			  client_id: state.client.client_id
 			},
-			}).done(function(authz){
-			authz = $.extend(authz, params);
-			ret.resolve(authz);
-			}).fail(function(){
-			console.log("failed to exchange code for access_token", arguments);
-			ret.reject();
+			on: {
+				success: function(authz) {
+					authz = Y.merge(authz, params);
+					ret.resolve(authz);
+				},
+				failure: function() {
+					console.log("failed to exchange code for access_token", arguments);
+					ret.reject();
+				}
+			}
 		});
 
-		return ret.promise();
+		return ret.promise;
 	}
 
 	function completePageReload(){
-		var d = $.Deferred();
+		var d = Q.defer();
 		process.nextTick(function(){
-		d.resolve(getPreviousToken());
+			d.resolve(getPreviousToken());
 		});
 		return d;
 	}
@@ -203,39 +209,39 @@ YUI.add('fhir-bb-client', function(Y) {
 			return;
 		}
 
-		jQuery.get(
-			fhirServiceUrl + "/metadata",
-			function(r){
-				var res = {
-					"name": "SMART on FHIR Testing Server",
-					"description": "Dev server for SMART on FHIR",
-					"url": fhirServiceUrl,
-					"oauth2": {
-						"registration_uri": null,
-						"authorize_uri": null,
-						"token_uri": null
-					}
-				};
-
-				try {
-					jQuery.each(r.rest[0].security.extension, function(responseNum, arg){
-						if (arg.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#register") {
-							res.oauth2.registration_uri = arg.valueUri;
-						} else if (arg.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#authorize") {
-							res.oauth2.authorize_uri = arg.valueUri;
-						} else if (arg.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#token") {
-							res.oauth2.token_uri = arg.valueUri;
+		Y.io(fhirServiceUrl + "/metadata",{
+			on: {
+				success: function(r) {
+					var res = {
+						"name": "SMART on FHIR Testing Server",
+						"description": "Dev server for SMART on FHIR",
+						"url": fhirServiceUrl,
+						"oauth2": {
+							"registration_uri": null,
+							"authorize_uri": null,
+							"token_uri": null
 						}
-					});
-				}
-				catch (err) {
-					return errback && errback(err);
-				}
+					};
 
-				callback && callback(res);
-			},
-			"json"
-		);
+					try {
+						Y.Array.each(r.rest[0].security.extension, function(responseNum, arg){
+							if (arg.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#register") {
+								res.oauth2.registration_uri = arg.valueUri;
+							} else if (arg.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#authorize") {
+								res.oauth2.authorize_uri = arg.valueUri;
+							} else if (arg.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#token") {
+								res.oauth2.token_uri = arg.valueUri;
+							}
+						});
+					}
+					catch (err) {
+						return errback && errback(err);
+					}
+
+					callback && callback(res);
+				}
+			}
+		});
 	};
 
 	var noAuthFhirProvider = function(serviceUrl) {

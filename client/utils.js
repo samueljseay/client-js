@@ -1,5 +1,5 @@
 YUI.add('fhir-utils', function(Y) {
-	var utils;
+	var utils = {};
 
 	utils.byCodes = function(observations, property){
 		var bank = utils.byCode(observations, property);

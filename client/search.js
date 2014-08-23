@@ -1,4 +1,6 @@
 YUI.add('fhir-search', function(Y) {
+	var Q = Y.Q;
+
 	function Search(p) {
 
 		var search = {};
@@ -10,9 +12,9 @@ YUI.add('fhir-search', function(Y) {
 		var nextPageUrl = null;
 
 		function gotFeed(d){
-			return function(data, status) {
+			return function(tx, response) {
 				nextPageUrl = null;
-				var feed = data.feed || data;
+				var feed = Y.JSON.parse(response.responseText);
 
 				if(feed.link) {
 					var next = feed.link.filter(function(l){
@@ -24,7 +26,7 @@ YUI.add('fhir-search', function(Y) {
 					}
 				}
 
-				var results = search.client.indexFeed(data);
+				var results = search.client.indexFeed(feed);
 				d.resolve(results, search);
 			};
 		};
@@ -49,15 +51,13 @@ YUI.add('fhir-search', function(Y) {
 			var searchParams = {
 				method: 'GET',
 				url: nextPageUrl,
-				dataType: 'json',
 				traditional: true,
+				headers: {
+					'Accept': 'application/json'
+				},
 				on: {
-					success: function() {
-						gotFeed(ret);
-					},
-					failure: function() {
-						failedFeed(ret);
-					}
+					success: gotFeed(ret),
+					failure: failedFeed(ret)
 				}
 			};
 
@@ -75,15 +75,13 @@ YUI.add('fhir-search', function(Y) {
 				method: 'GET',
 				url: search.client.urlFor(search.spec),
 				data: search.spec.queryParams(),
-				dataType: "json",
 				traditional: true,
+				headers: {
+					'Accept': 'application/json'
+				},
 				on: {
-					success: function() {
-						gotFeed(ret);
-					},
-					failure: function() {
-						failedFeed(ret);
-					}
+					success: gotFeed(ret),
+					failure: failedFeed(ret)
 				}
 			};
 
@@ -91,7 +89,7 @@ YUI.add('fhir-search', function(Y) {
 				search.client.authenticated(searchParams)
 			);
 
-			return ret;
+			return ret.promise;
 		};
 
 		return search;
@@ -99,5 +97,5 @@ YUI.add('fhir-search', function(Y) {
 
 	Y.namespace('FHIR').Search = Search;
 }, '0.0.1', {
-    requires: ['io-base', 'yui-q']
+    requires: ['io-base', 'yui-q','json-parse']
 });

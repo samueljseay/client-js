@@ -358,7 +358,7 @@ YUI.add('fhir-client', function(Y) {
 			});
 		}
 
-		decorateWithApi(client.api);
+		decorateWithApi(client);
 		decorateWithApi(client.context.patient, {
 			filter: withDefaultPatient,
 			where: withDefaultPatient
@@ -369,6 +369,6 @@ YUI.add('fhir-client', function(Y) {
 
 	Y.namespace('FHIR').client = FhirClient;
 }, '0.0.1', {
-    requires: ['io-base', 'yui-q', 'btoa', 'fhir-search-spec', 'fhir-utils']
+    requires: ['io-base', 'yui-q', 'btoa','fhir-search','fhir-search-spec', 'fhir-utils']
 });
 

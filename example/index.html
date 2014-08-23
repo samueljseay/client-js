@@ -65,14 +65,25 @@
     <script src="../client/fhir.js"></script>
   </head>
   <body>
-    <h1>It Begins...</h1>
+    <h1>Hello <span id="patient_name">...</span>!</h1>
+
     <script>
-        YUI().use('fhir',function(Y) {
+        YUI().use('fhir','node-base',function(Y) {
           var demo = {
             serviceUrl: "https://open-api.fhir.me",
             patientId: "1137192"
           },
           client = Y.FHIR.client(demo);
+
+          var pq = client.Patient.where._id(demo.patientId);
+
+          pq.search().then(function(p) {
+
+            var name = p[0].name[0];
+            var formatted = name.given.join(" ") + " " + name.family;
+
+            Y.one("#patient_name").set('text', formatted);
+          });
         });
     </script>
   </body>

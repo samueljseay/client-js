@@ -66,6 +66,7 @@
   </head>
   <body>
     <h1>Hello <span id="patient_name">...</span>!</h1>
+    <ul id="med_list"></ul>
 
     <script>
         YUI().use('fhir','node-base',function(Y) {
@@ -78,12 +79,26 @@
           var pq = client.Patient.where._id(demo.patientId);
 
           pq.search().then(function(p) {
-
             var name = p[0].name[0];
             var formatted = name.given.join(" ") + " " + name.family;
-
             Y.one("#patient_name").set('text', formatted);
           });
+
+          client.MedicationPrescription
+               .where
+               .status("active")
+               .patient(pq)
+               .search()
+               .then(function(prescriptions) {
+                  prescriptions.forEach(function(rx) {
+
+                    var med = client.getContained(rx, rx.medication.reference).name;
+
+                    Y.one('#med_list').append('<li>' + med + '</li>');
+
+
+                  });
+              });
         });
     </script>
   </body>

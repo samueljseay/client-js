@@ -143,7 +143,7 @@ YUI.add('fhir-client', function(Y) {
 		};
 
 		client.cachedLink = handleReference({
-			contained: getContained,
+			contained: client.getContained,
 			local: getLocal
 		});
 
@@ -153,10 +153,11 @@ YUI.add('fhir-client', function(Y) {
 			remote: followRemote
 		});
 
-		function getContained(from, id) {
+		client.getContained = function(from, id) {
 			var matches = from.contained.filter(function(c){
-				return c.id === id;
+				return '#' + c._id === id;
 			});
+
 			if (matches.length !== 1)  {
 				return null;
 			}
